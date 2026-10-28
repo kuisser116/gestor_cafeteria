@@ -98,16 +98,31 @@ class ApiClient {
   }
  
   //Direccionamiento de los errores fuera de los 200's y los 300's
+  // 404 -> NotFoundFailure, 409 -> ConflictFailure, 422 -> ValidationFailure,
+  // 500..599 -> ServerFailure y cualquier otro -> UnexpectedFailure,
+  // usando el campo `detail` que trae el servidor cuando existe.
   Failure mapHttpError(int code, Object? json) {
     return switch (code) {
-      404 => const NotFoundFailure('Orden no encontrada'),
-      409 => const ConflictFailure('Acción no permitida'),
+      404 => NotFoundFailure(_detailMessage(json, 'Orden no encontrada')),
+      409 => ConflictFailure(_detailMessage(json, 'Acción no permitida')),
       422 => ValidationFailure(_fieldsFrom(json)),
       >= 500 && < 600 => ServerFailure(code),
-      _ => UnexpectedFailure(code, 'Error desconocido ($code)'),
+      _ => UnexpectedFailure(
+          code, _detailMessage(json, 'Error desconocido ($code)')),
     };
   }
  
+  //`detail` es texto en 404, 409 y en los errores simulados; si no lo es,
+  //se usa el mensaje de respaldo para no romperse con null u otros formatos.
+  String _detailMessage(Object? json, String fallback) {
+    if (json is Map && json['detail'] is String) {
+      return json['detail'] as String;
+    }
+    return fallback;
+  }
+ 
+  //En 422 `detail` es una lista de errores; por cada elemento la clave del
+  //mapa es loc[1] (p. ej. "customer") y el valor es msg.
   Map<String, String> _fieldsFrom(Object? json) {
     final fields = <String, String>{};
     if (json is Map && json['detail'] is List) {
