@@ -130,7 +130,8 @@ class ApiClient {
         if (error is Map && error['loc'] is List && error['msg'] is String) {
           final loc = error['loc'] as List;
           if (loc.isNotEmpty) {
-            fields[loc.last.toString()] = error['msg'] as String;
+            final key = loc.length > 1 ? loc[1] : loc.last;
+            fields[key.toString()] = error['msg'] as String;
           }
         }
       }
