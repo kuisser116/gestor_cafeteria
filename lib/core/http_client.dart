@@ -80,7 +80,7 @@ class ApiClient {
       await _tokens?.clear();
       throw const UnauthorizedFailure();
     }
-    if (code >= 200 && code <= 300) {
+    if (code >= 200 && code < 300) {
       return json;
     } else {
       throw mapHttpError(code, json);
